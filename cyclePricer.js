@@ -17,6 +17,10 @@ const scrapeOpts = {
         selector: '.listing-info-title',
         convert: (text) => text.replace(/[0-9]{4}\s+Ducati/, '').trim().toLowerCase(),
       },
+      model: {
+        selector: '.listing-info-title',
+        convert: (text) => (text.toLowerCase().match(/(monster|panigale|supersport|multistrada)/) || [ null ])[0],
+      },
       displacement: {
         selector: '.listing-info-title',
         convert: (text) => {
@@ -59,7 +63,7 @@ const scrapeOpts = {
   },
 };
 
-const data = Promise.all(urls.slice(0,1).map(url => 
+const data = Promise.all(urls.map(url => 
   scrapeIt(url, scrapeOpts)
     .then(({ article }) => article)))
 
