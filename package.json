@@ -4,15 +4,24 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "test-scraper": "nodemon --exec babel-node cyclePricer.js"
+    "test-scraper": "nodemon --exec babel-node cyclePricer.js",
+    "test-regression": "nodemon --exec babel-node regression.js"
   },
   "dependencies": {
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.0",
     "babel-preset-env": "^1.6.1",
     "json2csv": "^3.11.5",
+    "ml-logistic-regression": "^1.0.2",
+    "ml-matrix": "^5.0.1",
+    "ml-pls": "^1.0.0",
+    "ml-regression": "^4.4.2",
+    "regression": "^2.0.1",
     "request": "^2.83.0",
     "request-promise-native": "^1.0.5",
-    "scrape-it": "^4.1.2"
+    "scrape-it": "^4.1.2",
+    "simple-statistics": "^5.2.1",
+    "smr": "^0.12.6",
+    "svm": "^0.1.1"
   }
 }

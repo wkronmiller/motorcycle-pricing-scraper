@@ -19,7 +19,7 @@ const scrapeOpts = {
       },
       model: {
         selector: '.listing-info-title',
-        convert: (text) => (text.toLowerCase().match(/(monster|panigale|supersport|multistrada)/) || [ null ])[0],
+        convert: (text) => (text.toLowerCase().match(/(monster|panigale|supersport|multistrada|superleggera|scrambler)/) || [ null ])[0],
       },
       displacement: {
         selector: '.listing-info-title',
