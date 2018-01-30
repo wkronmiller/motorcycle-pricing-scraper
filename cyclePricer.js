@@ -3,13 +3,14 @@ import fs from 'fs';
 import scrapeIt from 'scrape-it';
 import json2csv from 'json2csv';
 
-const baseUrl = 'https://www.cycletrader.com/search-results?make=Ducati&model=monster';
-const numPages = 45;
-const firstPage = 1;
+const ducatiUrls = (() => {
+  const baseUrl = 'https://www.cycletrader.com/search-results?make=Ducati&model=monster';
+  const numPages = 45;
+  const firstPage = 1;
+  return Array(numPages).fill(baseUrl).map((url, page) => `${url}?page=${page + firstPage}`);
+})();
 
-const urls = Array(numPages).fill(baseUrl).map((url, page) => `${url}?page=${page + firstPage}`);
-
-const scrapeOpts = {
+const ducatiScrapeOpts = {
   article: {
     listItem: '.searchResultsMid',
     data: {
@@ -63,12 +64,14 @@ const scrapeOpts = {
   },
 };
 
-const data = Promise.all(urls.map(url => 
-  scrapeIt(url, scrapeOpts)
-    .then(({ article }) => article)))
+(function scrape(urls, scrapeOpts, outFile) {
+  const data = Promise.all(urls.map(url => 
+    scrapeIt(url, scrapeOpts)
+      .then(({ article }) => article)))
 
-data
-  .then(entries => entries.reduce((a,b) => a.concat(b)))
-  .then(data => JSON.stringify(data, null, 2))
-  .then(json => fs.writeFileSync('ducati.json', json))
-  .then(console.log)
+  return data
+    .then(entries => entries.reduce((a,b) => a.concat(b)))
+    .then(data => JSON.stringify(data, null, 2))
+    .then(json => fs.writeFileSync(outFile, json))
+    .then(console.log)
+})(ducatiUrls, ducatiScrapeOpts, 'ducati.json');
