@@ -1,9 +1,6 @@
-//import request from 'request-promise-native';
 import fs from 'fs';
 import merge from 'deepmerge';
 import scrapeIt from 'scrape-it';
-import json2csv from 'json2csv';
-import WAE from 'web-auto-extractor';
 import rp from 'request-promise-native';
 
 const mkUrls = ({ numPages, firstPage, baseUrl }) => Array(numPages).fill(baseUrl).map((url, page) => `${url}&page=${page + firstPage}`);
