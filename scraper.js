@@ -3,14 +3,16 @@ import merge from 'deepmerge';
 import scrapeIt from 'scrape-it';
 import rp from 'request-promise-native';
 
-const mkUrls = ({ numPages, firstPage, baseUrl }) => Array(numPages).fill(baseUrl).map((url, page) => `${url}&page=${page + firstPage}`);
+const mkUrls = ({ numPages, firstPage, baseUrl }) => 
+  Array(numPages)
+    .fill(baseUrl)
+    .map((url, page) => `${url}&page=${page + firstPage}`);
 
-const ducatiUrls = (() => {
-  const baseUrl = 'https://www.cycletrader.com/search-results?make=Ducati&model=monster';
-  const numPages = 45;
-  const firstPage = 1;
-  return mkUrls({ numPages, firstPage, baseUrl });
-})();
+const ducatiUrls = mkUrls({
+  baseUrl: 'https://www.cycletrader.com/search-results?make=Ducati&model=monster',
+  numPages: 45,
+  firstPage: 1,
+});
 
 const bmwUrls = mkUrls({
   baseUrl: 'https://www.cycletrader.com/BMW-Motorcycles/search-results?make=BMW',
