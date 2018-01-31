@@ -1,40 +1,37 @@
 //import request from 'request-promise-native';
 import fs from 'fs';
+import merge from 'deepmerge';
 import scrapeIt from 'scrape-it';
 import json2csv from 'json2csv';
+import WAE from 'web-auto-extractor';
+import rp from 'request-promise-native';
+
+const mkUrls = ({ numPages, firstPage, baseUrl }) => Array(numPages).fill(baseUrl).map((url, page) => `${url}&page=${page + firstPage}`);
 
 const ducatiUrls = (() => {
   const baseUrl = 'https://www.cycletrader.com/search-results?make=Ducati&model=monster';
   const numPages = 45;
   const firstPage = 1;
-  return Array(numPages).fill(baseUrl).map((url, page) => `${url}?page=${page + firstPage}`);
+  return mkUrls({ numPages, firstPage, baseUrl });
 })();
 
-const ducatiScrapeOpts = {
+const bmwUrls = mkUrls({
+  baseUrl: 'https://www.cycletrader.com/BMW-Motorcycles/search-results?make=BMW',
+  numPages: 299,
+  firstPage: 1,
+});
+
+const commonScrapeOpts = {
   article: {
-    listItem: '.searchResultsMid',
+    listItem: '#gridView > .listingContainer',
     data: {
-      name: {
-        selector: '.listing-info-title',
-        convert: (text) => text.replace(/[0-9]{4}\s+Ducati/, '').trim().toLowerCase(),
-      },
-      model: {
-        selector: '.listing-info-title',
-        convert: (text) => (text.toLowerCase().match(/(monster|panigale|supersport|multistrada|superleggera|scrambler)/) || [ null ])[0],
-      },
-      displacement: {
-        selector: '.listing-info-title',
-        convert: (text) => {
-          const displacement = text.replace(/[0-9]{4}\s+Ducati/, '').trim().match(/[0-9]{3,4}/);
-          if(displacement) {
-            return parseInt(displacement[0]);
-          }
-          return null;
-        },
-      },
       year: {
         selector: '.listing-info-title',
-        convert: (text) => parseInt(text.match(/[0-9]{4}/)[0]),
+        convert: (text) => {
+          const yearMatch = text.match(/[0-9]{4}/);
+          if(!yearMatch) { return null; }
+          return parseInt(yearMatch[0]);
+        },
       },
       price: {
         selector: '.price-span',
@@ -62,16 +59,66 @@ const ducatiScrapeOpts = {
       },
     },
   },
-};
+}
 
-(function scrape(urls, scrapeOpts, outFile) {
+const ducatiScrapeOpts = merge({
+  article: {
+    data: {
+      name: {
+        selector: '.listing-info-title',
+        convert: (text) => text.replace(/[0-9]{4}\s+Ducati/, '').trim().toLowerCase(),
+      },
+      model: {
+        selector: '.listing-info-title',
+        convert: (text) => (text.toLowerCase().match(/(monster|panigale|supersport|multistrada|superleggera|scrambler)/) || [ null ])[0],
+      },
+      displacement: {
+        selector: '.listing-info-title',
+        convert: (text) => {
+          const displacement = text.replace(/[0-9]{4}\s+Ducati/, '').trim().match(/[0-9]{3,4}/);
+          if(displacement) {
+            return parseInt(displacement[0]);
+          }
+          return null;
+        },
+      },
+    },
+  },
+}, commonScrapeOpts);
+
+
+const bmwScrapeOpts = merge({
+  article: {
+    data: {
+      name: {
+        selector: '.listing-info-title',
+        convert: (text) => text.replace(/[0-9]{4}\s+BMW/, '').trim().toLowerCase(),
+      },
+      model: {
+        selector: '.listing-info-title',
+        convert: (text) => 
+          text.replace(/[0-9]{4}\s+BMW/, '').toLowerCase()
+            // work-around for stupid bmw color names
+            .split(/(thunder|ocean|metallic|light|lupin|demo|granite)/)[0]
+            .trim(),
+      },
+    },
+  },
+}, commonScrapeOpts);
+
+function scrape(urls, scrapeOpts, outFile) {
+  console.log(urls) //TODO: remove
   const data = Promise.all(urls.map(url => 
     scrapeIt(url, scrapeOpts)
       .then(({ article }) => article)))
+      .catch(err => console.error('error', err));
+  return data.then(console.log) //TODO: remove
 
   return data
     .then(entries => entries.reduce((a,b) => a.concat(b)))
     .then(data => JSON.stringify(data, null, 2))
     .then(json => fs.writeFileSync(outFile, json))
     .then(console.log)
-})(ducatiUrls, ducatiScrapeOpts, 'ducati.json');
+}
+
+scrape(bmwUrls.slice(8,9), bmwScrapeOpts, 'bmw.json');
