@@ -99,7 +99,7 @@ const bmwScrapeOpts = merge({
         convert: (text) => 
           text.replace(/[0-9]{4}\s+BMW/, '').toLowerCase()
             // work-around for stupid bmw color names
-            .split(/(thunder|ocean|metallic|light|lupin|demo|granite)/)[0]
+            .split(/(austin|thunder|ocean|metallic|light|lupin|apine|alpine|pearl|espresso|mars|ebony|frozen|demo|granite|white|black|blue|red|green)/)[0]
             .trim(),
       },
     },
@@ -107,18 +107,24 @@ const bmwScrapeOpts = merge({
 }, commonScrapeOpts);
 
 function scrape(urls, scrapeOpts, outFile) {
-  console.log(urls) //TODO: remove
   const data = Promise.all(urls.map(url => 
     scrapeIt(url, scrapeOpts)
       .then(({ article }) => article)))
-      .catch(err => console.error('error', err));
-  return data.then(console.log) //TODO: remove
+      .then(articles => articles.reduce((a,b) => a.concat(b), []))
+      .then(articles => articles.filter(({ name, model }) => (name || '').length > 0 && (model || '').length > 0))
+      .then(articles => articles.filter(({ price }) => isNaN(price || NaN) === false))
 
   return data
-    .then(entries => entries.reduce((a,b) => a.concat(b)))
+    .then(listings => listings
+      .map(({model}) => model)
+      .reduce((obj, model) => Object.assign(obj, { [ model ]: null }), {}))
+    .then(modelSet => Object.keys(modelSet))
+    .then(console.log) //TODO: remove
+
+  return data
     .then(data => JSON.stringify(data, null, 2))
     .then(json => fs.writeFileSync(outFile, json))
     .then(console.log)
 }
 
-scrape(bmwUrls.slice(8,9), bmwScrapeOpts, 'bmw.json');
+scrape(bmwUrls.slice(101,112), bmwScrapeOpts, 'bmw.json');
