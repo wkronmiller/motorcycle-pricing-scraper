@@ -89,6 +89,7 @@ const ducatiScrapeOpts = merge({
 
 const bmwScrapeOpts = merge({
   article: {
+    //TODO: displacement? or just stick to model
     data: {
       name: {
         selector: '.listing-info-title',

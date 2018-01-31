@@ -3,26 +3,25 @@ import LogisticRegression from 'ml-logistic-regression';
 import * as ss from 'simple-statistics';
 import { PLS } from 'ml-pls';
 import { Regression } from 'smr';
-const data = require('./ducati.json');
+const data = require('./bmw.json');
 
 console.log('Num original datapoints', data.length);
 
-const models = ['monster', 'multistrada', 'supersport', 'panigale', ];
-
 const filteredData = data
-  .filter(({ displacement }) => displacement)
+  //.filter(({ displacement }) => displacement)
   .filter(({ price }) => price)
   .filter(({ year }) => year)
   .filter(({ model }) => model)
+  .filter(({ location }) => location)
   .filter(({ location: { state } }) => state)
   //.filter(({ mileage }) => mileage);
 
 console.log('num filtered datapoints', filteredData.length)
 
 const configPrices = filteredData
-  .reduce((obj, { displacement, year, mileage, model, price, location: { state }, }) => {
+  .reduce((obj, { year, mileage, model, price, location: { state }, }) => {
     mileage = mileage || 0;
-    const configStr = JSON.stringify({ model, displacement, year, state });
+    const configStr = JSON.stringify({ model, year, state });
     const prices = (obj[configStr] || {});
     const minPrice = ss.min([(prices[mileage] || price), price]);
     obj[configStr] = Object.assign(prices, { [mileage]: minPrice });
