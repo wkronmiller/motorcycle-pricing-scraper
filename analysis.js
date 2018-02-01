@@ -7,29 +7,28 @@ const data = require('./bmw.json');
 
 console.log('Num original datapoints', data.length);
 
+function getUnique(array, extractor) {
+  return Object.keys(array.map(extractor).reduce((obj, value) => Object.assign(obj, { [ value ]: null }), {}))
+}
+
 const filteredData = data
   //.filter(({ displacement }) => displacement)
   .filter(({ price }) => price)
   .filter(({ year }) => year)
-  .filter(({ model }) => model)
+  .filter(({ model }) => model === 's1000rr')
   .filter(({ location }) => location)
   .filter(({ location: { state } }) => state)
-  //.filter(({ mileage }) => mileage);
+  .filter(({ mileage }) => mileage);
 
 console.log('num filtered datapoints', filteredData.length)
 
 const configPrices = filteredData
-  .reduce((obj, { year, mileage, model, price, location: { state }, }) => {
-    mileage = mileage || 0;
-    const configStr = JSON.stringify({ model, year, state });
-    const prices = (obj[configStr] || {});
-    const minPrice = ss.min([(prices[mileage] || price), price]);
-    obj[configStr] = Object.assign(prices, { [mileage]: minPrice });
-    return obj;
+  .reduce((obj, { year, model, price, location: { state }, mileage }) => {
+    const approxMileage = Math.round(mileage / 100) * 100;
+    const configStr = JSON.stringify({ model, year, state, approxMileage });
+    const prices = (obj[configStr] || []).concat(price);
+    prices.sort();
+    return Object.assign(obj, { [configStr]: prices });
   }, {})
 
-console.log('num configs', Object.keys(configPrices).length)
-
-const configPricesArray = Object.keys(configPrices).map(config => ({[config]: configPrices[config]}));
-configPricesArray.sort((a,b) => Object.keys(a) > Object.keys(b) ? 1 : -1);
-console.log(configPricesArray)
+console.log(configPrices)
