@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "test-scraper": "nodemon --exec babel-node scraper.js",
+    "test-scraper": "nodemon --exec babel-node scrape.js",
     "test-analysis": "nodemon --exec babel-node analysis.js"
   },
   "dependencies": {
