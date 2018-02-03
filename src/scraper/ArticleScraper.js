@@ -1,4 +1,3 @@
-import fs from 'fs';
 import scrapeIt from 'scrape-it';
 import rp from 'request-promise-native';
 
@@ -21,7 +20,7 @@ export default class ArticleScraper extends Scraper {
 
     return data
       .then(data => JSON.stringify(data, null, 2))
-      .then(json => fs.writeFileSync(outFile, json))
+      .then(json => this.save(json))
       .then(console.log)
   }
 }

@@ -11,7 +11,10 @@
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.0",
     "babel-preset-env": "^1.6.1",
+    "cheerio": "^1.0.0-rc.2",
+    "chunk": "^0.0.2",
     "deepmerge": "^2.0.1",
+    "feedparser-promised": "^1.5.0",
     "json2csv": "^3.11.5",
     "ml-logistic-regression": "^1.0.2",
     "ml-matrix": "^5.0.1",
@@ -25,5 +28,8 @@
     "smr": "^0.12.6",
     "svm": "^0.1.1",
     "web-auto-extractor": "^1.0.17"
+  },
+  "devDependencies": {
+    "babel-plugin-transform-object-rest-spread": "^6.26.0"
   }
 }
