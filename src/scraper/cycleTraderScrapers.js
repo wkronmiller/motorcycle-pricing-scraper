@@ -8,18 +8,18 @@ export default {
         data: {
           name: {
             selector: '.listing-info-title',
-            convert: (text) => text.replace(/[0-9]{4}\s+Ducati/, '').trim().toLowerCase(),
+            convert: text => text.replace(/[0-9]{4}\s+Ducati/, '').trim().toLowerCase(),
           },
           model: {
             selector: '.listing-info-title',
-            convert: (text) => (text.toLowerCase().match(/(monster|panigale|supersport|multistrada|superleggera|scrambler)/) || [ null ])[0],
+            convert: text => (text.toLowerCase().match(/(monster|panigale|supersport|multistrada|superleggera|scrambler)/) || [null])[0],
           },
           displacement: {
             selector: '.listing-info-title',
             convert: (text) => {
               const displacement = text.replace(/[0-9]{4}\s+Ducati/, '').trim().match(/[0-9]{3,4}/);
-              if(displacement) {
-                return parseInt(displacement[0]);
+              if (displacement) {
+                return parseInt(displacement[0], 10);
               }
               return null;
             },
@@ -41,16 +41,16 @@ export default {
         data: {
           name: {
             selector: '.listing-info-title',
-            convert: (text) => text.replace(/[0-9]{4}\s+BMW/, '').trim().toLowerCase(),
+            convert: text => text.replace(/[0-9]{4}\s+BMW/, '').trim().toLowerCase(),
           },
           model: {
             selector: '.listing-info-title',
-            convert: (text) => { 
+            convert: (text) => {
               const matches = text
                 .replace(/[0-9]{4}\s+BMW/, '')
                 .toLowerCase()
                 .match(/[a-z]{0,2}\s*[0-9]{1,4}\s*(sport|race|[a-z]{1,2})/);
-              if(!matches) {
+              if (!matches) {
                 return null;
               }
               return matches[0].replace(/\s/g, '');
@@ -63,6 +63,6 @@ export default {
       baseUrl: 'https://www.cycletrader.com/BMW-Motorcycles/search-results?make=BMW',
       numPages: 299,
       firstPage: 1,
-    }
+    },
   }),
-}
+};

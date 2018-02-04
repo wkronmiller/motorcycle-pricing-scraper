@@ -1,9 +1,9 @@
 import feedparser from 'feedparser-promised';
 import rp from 'request-promise-native';
-import scrapeIt from 'scrape-it';
 import cheerio from 'cheerio';
 import chunk from 'chunk';
 import Scraper from './Scraper';
+import { camelCase, convertType, getVinInfo } from './utils';
 
 const locations = require('./craigslistLocations.json');
 const categories = [
@@ -15,14 +15,14 @@ const categories = [
 
 const mkBaseUrl = ({ category, location }) => `https://${location}.craigslist.org/search/${category}?format=rss`;
 
-const baseUrls = 
+const baseUrls =
   locations
     .map(location => categories.map(category => mkBaseUrl({ category, location })))
-    .reduce((a,b) => a.concat(b), []);
+    .reduce((a, b) => a.concat(b), []);
 
 const mkSearchUrls = ({ searchTerm }) => (searchTerm) ? baseUrls.map(url => `${url}&query=${searchTerm}`) : baseUrls;
 
-const cleanText = (text) => text.toLowerCase().replace(/\s\s+/g, ' ').trim();
+const cleanText = text => text.toLowerCase().replace(/\s\s+/g, ' ').trim();
 
 export default class CraigslistScraper extends Scraper {
   constructor({ searchTerm, outFile }) {
@@ -54,34 +54,34 @@ export default class CraigslistScraper extends Scraper {
                   (index === 0) ? ({ name: prop }) : null)
             // Remove null values
             .filter(kv => kv)
-            .reduce((a,b) => Object.assign(a,b))
+            .reduce((a, b) => Object.assign(a,b))
           ,
-        })))))
-        .then(entries => entries.map(({ attributes, ...rest }) => Object.assign({}, attributes, rest)))
-        .then(entries => entries.map(({ title, ...rest }) => {
-          const priceRe = /\&#x0024;([0-9,]{1,6})/;
-          const price = (title.match(priceRe) || [ null, null ])[1];
-          return Object.assign({}, rest, { price, title });
-        }))
-        .then(entries => entries.map(({ posting, ...rest }) => {
-          const flags = posting.match(/dropped|damage|scuff|scratch|dent|project|rebuild|misfire/g) || [];
-          const features = posting.match(/asc|abs|brembo|tpm|heated grips|certified pre-owned/g) || [];
-          const [displacementSubstr, displacement] = (posting.match(/([0-9]{1,4})\s*cc/) || [ null, null ]);
-          const [substr, mileage] = (posting.match(/([0-9,]{1,7})\s*mi/) || [ null ]);
-          return Object.assign({}, rest, { flags, features, mileage, displacement });
-        }))
-        .then(entries => entries.map(({ title, name, ...rest }) => {
-          const [year] = ((name || title).match(/[0-9]{4}/) || [ null ]);
-          return Object.assign({}, rest, { title, name, year });
-        }))
-        .then(entries => Promise.all(entries.map(({ vin, year, ...rest }) =>
-          getVinInfo({ vin, year, }).then(vinInfo => Object.assign({}, rest, { vin, year }, vinInfo))
-        )))
-        .then(entries => 
-          entries.map(entry => 
-            Object.keys(entry).reduce((obj, key) => 
-              Object.assign(obj, { [key]: convertType(entry[key]) }), {})
-      ))
+      })))))
+      .then(entries => entries.map(({ attributes, ...rest }) => Object.assign({}, attributes, rest)))
+      .then(entries => entries.map(({ title, ...rest }) => {
+        const priceRe = /\&#x0024;([0-9,]{1,6})/;
+        const price = (title.match(priceRe) || [null, null])[1];
+        return Object.assign({}, rest, { price, title });
+      }))
+      .then(entries => entries.map(({ posting, ...rest }) => {
+        const flags = posting.match(/dropped|damage|scuff|scratch|dent|project|rebuild|misfire/g) || [];
+        const features = posting.match(/asc|abs|brembo|tpm|heated grips|certified pre-owned/g) || [];
+        const [displacement] = (posting.match(/([0-9]{1,4})\s*cc/) || [null, null]).slice(1);
+        const [mileage] = (posting.match(/([0-9,]{1,7})\s*mi/) || [null, null]).slice(1);
+        return Object.assign({}, rest, { flags, features, mileage, displacement });
+      }))
+      .then(entries => entries.map(({ title, name, ...rest }) => {
+        const [year] = ((name || title).match(/[0-9]{4}/) || [null]);
+        return Object.assign({}, rest, { title, name, year });
+      }))
+      .then(entries => Promise.all(entries.map(({ vin, year, ...rest }) =>
+        getVinInfo({ vin, year, }).then(vinInfo => Object.assign({}, rest, { vin, year }, vinInfo))
+      )))
+      .then(entries => 
+        entries.map(entry => 
+          Object.keys(entry).reduce((obj, key) => 
+            Object.assign(obj, { [key]: convertType(entry[key]) }), {})
+    ));
   }
 
   scrape() {
@@ -95,41 +95,11 @@ export default class CraigslistScraper extends Scraper {
             console.log('running results', results);
             return results;
           })
-          .then(results => this.loadBatch(chunk).then(nextResults => results.concat(nextResults))), Promise.resolve([])
-      )
+          .then(results =>
+            this.loadBatch(chunk).then(nextResults =>
+              results.concat(nextResults))), Promise.resolve([]))
       .then(data => JSON.stringify(data, null, 2))
       .then(json => this.save(json))
-      .then(console.log)
+      .then(console.log);
   }
 }
-
-function convertType(str) {
-  if(/^[0-9,\.]+$/.test(str)) {
-    const noCommas = str.replace(/,/g, '');
-    if(noCommas.indexOf('.') >= 0) {
-      return parseFloat(noCommas);
-    }
-    return parseInt(noCommas);
-  } else {
-    return str;
-  }
-}
-
-const camelCase = (text) => text
-  .replace(/[\(\)\-\/]/g, ' ')
-  .trim()
-  .replace(/\s+[a-z-A-Z]/g, (match) => match.trim().toUpperCase())
-  .replace(/^[A-Z]/, (match) => match.toLowerCase());
-
-function getVinInfo({vin, year}) {
-  if(!vin) {
-    return Promise.resolve({});
-  }
-  return rp({ uri: `https://vpic.nhtsa.dot.gov/api/vehicles/decodevin/${vin}?modelyear=${year}&format=json`, json: true })
-    .then(({ Results }) => 
-      (Results || []).reduce((obj, { Variable, Value }) => (Value) ? 
-        Object.assign(obj, { [camelCase(Variable)]: Value.toLowerCase() }) : obj, {}));
-}
-
-const bmwScraper = new CraigslistScraper({ searchTerm: 'bmw', outFile: 'bmw-craigslist.json' });
-bmwScraper.scrape();
